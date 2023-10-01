@@ -17,4 +17,5 @@ async function start() {
         }
     }
 }
-start();
+
+addAccount({name: 'Hi im Sparky v2', region: 'eune'});
