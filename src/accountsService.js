@@ -68,4 +68,26 @@ async function removeAccount(account) {
     }
 }
 
-module.exports = { addAccount, getAccountDetails, removeAccount }
+function getAllAccounts() {;
+    return new Promise ((resolve, reject) => {
+        fs.readFile('accounts.json', 'utf-8', async (err, rawAccounts) => {
+            if (err) reject(err.message);
+    
+            const accounts = JSON.parse(rawAccounts);
+            const updatedAccounts = [];
+    
+            for (const account of accounts) {
+                try {
+                    await axios.post(`https://op.gg/api/v1.0/internal/bypass/summoners/${account.region}/${account.summonerId}/renewal`);
+                    const checkedAccount = await getAccountDetails(account);
+                    updatedAccounts.push(checkedAccount);    
+                } catch (err) {
+                    reject(err.message);
+                }
+            }
+            resolve(updatedAccounts);
+        });
+    });
+}
+
+module.exports = { getAllAccounts }
