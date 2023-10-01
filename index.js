@@ -1,6 +1,6 @@
 const axios = require('axios');
 const accounts = require('./accounts.json')
-const { addAccount, getAccountDetails } = require('./src/accountsService.js');
+const { addAccount, getAccountDetails, removeAccount } = require('./src/accountsService.js');
 
 async function start() {
     for (const account of accounts) {

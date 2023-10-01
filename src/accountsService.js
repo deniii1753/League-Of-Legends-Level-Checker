@@ -5,12 +5,14 @@ async function addAccount(account) {
     try {
         const detailedAccount = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
 
+        if (!detailedAccount.data.pageProps.data.name) throw Error('The account does not exist!');
+
         fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
             if (err) console.log(err.message);;
 
             const accounts = JSON.parse(rawAccounts);
 
-            if (accounts.find((x) => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return console.log('The account is already in the list!');
+            if (accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return console.log('The account is already in the list!');
             accounts.push({
                 name: detailedAccount.data.pageProps.data.name,
                 region: (detailedAccount.data.pageProps.region).toUpperCase(),
@@ -42,4 +44,28 @@ async function getAccountDetails(account) {
     }
 }
 
-module.exports = { addAccount, getAccountDetails }
+async function removeAccount(account) {
+    try {
+        const detailedAccount = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
+
+        if (!detailedAccount.data.pageProps.data.name) throw Error('The account does not exist!');
+
+        fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
+            if (err) console.log(err.message);;
+
+            const accounts = JSON.parse(rawAccounts);
+            if (!accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return console.log('The account is not in the list!');
+
+            fs.writeFile('accounts.json', JSON.stringify(accounts.filter(x => x.summonerId !== detailedAccount.data.pageProps.data.summoner_id)), 'utf-8', (err) => {
+                if (err) return console.log(`An error occured when trying to remove the account! \n Error: ${err.message}`);
+
+                console.log('Successfully removed the account!');
+            })
+        });
+
+    } catch (err) {
+        console.log(err.message);
+    }
+}
+
+module.exports = { addAccount, getAccountDetails, removeAccount }
