@@ -119,7 +119,12 @@ function getAccounts(region) {
                 try {
                     await axios.post(`https://op.gg/api/v1.0/internal/bypass/summoners/${account.region}/${account.summonerId}/renewal`);
                     const checkedAccount = await getAccountDetails(account);
-                    updatedAccounts.push(checkedAccount);
+                    if(checkedAccount.hasOwnProperty('name')) {
+                        updatedAccounts.push(checkedAccount)
+                    } else {
+                        console.log(`An error occured while trying to get information about ${account.name} in ${account.region}! Skipping this account...`);
+                    }
+                    
                 } catch (err) {
                     return reject(err.message);
                 }
