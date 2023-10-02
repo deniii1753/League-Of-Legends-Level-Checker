@@ -38,7 +38,6 @@ client.on('interactionCreate', async (interaction) => {
                 } else {
                     message += `✅ ${account.level}\n`
                 }
-                // message += `---=Account ${i + 1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
             });
 
             return interaction.editReply(message);
@@ -53,7 +52,7 @@ client.on('interactionCreate', async (interaction) => {
             let message = '';
 
             accounts.forEach((account, i) => {
-                message += `---=Account ${i + 1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
+                message += `---=Account ${i + 1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\nLast Game: **${account.lastGame}**\n-------------------\n\n`;
             });
 
             return interaction.editReply(message);

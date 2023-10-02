@@ -39,10 +39,27 @@ async function getAccountDetails(account) {
     try {
         const res = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
 
+        const date = new Date(res.data.pageProps.games.meta.first_game_created_at).getTime();
+        const currentDate = new Date().getTime();
+
+        const timePassed = currentDate - date;
+
+        let time = '';
+        
+        if (timePassed / 8.64e+7 >= 1) { 
+            time = `${(timePassed / 8.64e+7).toFixed(0)} days ago.`
+        } else if (timePassed / 3.6e+6 >= 1) { 
+            time = `${(timePassed / 3.6e+6).toFixed(0)} hours ago.`
+        } else if (timePassed / 60000 >= 1) { 
+            time = `${(timePassed / 60000).toFixed(0)} minutes ago.`;
+        } else {
+            time = `${(timePassed / 1000).toFixed(0)} seconds ago.`; 
+        }
         return {
             name: res.data.pageProps.data.name,
             level: res.data.pageProps.data.level,
-            region: (res.data.pageProps.region).toUpperCase()
+            region: (res.data.pageProps.region).toUpperCase(),
+            lastGame: time
         }
     } catch (err) {
         return err;
@@ -107,7 +124,7 @@ function getAccounts(region) {
                     return reject(err.message);
                 }
             }
-            return resolve(region ? updatedAccounts.sort((a,b) => b.level - a.level) : updatedAccounts.sort((a,b) => (a.region).localeCompare(b.region) || b.level - a.level));
+            return resolve(region ? updatedAccounts.sort((a, b) => b.level - a.level) : updatedAccounts.sort((a, b) => (a.region).localeCompare(b.region) || b.level - a.level));
         });
     });
 }
