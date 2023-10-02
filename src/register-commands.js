@@ -4,7 +4,30 @@ const settings = require('../settings.json');
 const commands = [
     {
         name: 'check',
-        description: 'Showing the level on every account.'
+        description: 'Showing the level of the accounts.',
+        options: [
+            {
+                name: 'region',
+                description: 'Select specific region or leave it empty for all regions.',
+                type: 3,
+                choices: [
+                    {
+                        name: 'euw',
+                        value: 'EUW'
+                    },
+                    {
+                        name: 'eune',
+                        value: 'EUNE'
+                    },
+                    {
+                        name: 'na',
+                        value: 'NA'
+                    }
+                ]
+            }
+        ]
+    },
+    {
         name: 'detailed_check',
         description: 'Showing detailed information about every account.',
         options: [

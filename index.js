@@ -25,20 +25,31 @@ client.on('interactionCreate', async (interaction) => {
 
     try {
         await interaction.deferReply();
-        
-        if(command === 'check') {
-            const response = await getAllAccounts();
+
+        if (command === 'check') {
+            const region = interaction.options.get('region')?.value;
+            const accounts = await getAccounts(region ? region.toUpperCase() : null);
+
             let message = '';
 
-            response.forEach((account, i) => {
-                message+=`---=Account ${i+1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
+            accounts.forEach((account, i) => {
+                if (!message.includes(account.region)) {
+                    message += `\n----------= **${account.region}** =----------\n\n`
+                } else {
+                    message += `✅ ${account.level}\n`
+                }
+                // message += `---=Account ${i + 1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
+            });
+
+            return interaction.editReply(message);
+
         } else if (command === 'detailed_check') {
             const member = interaction.member;
             if (!(member.roles.cache.has(AdminRoleId))) return interaction.editReply('❌ You are not allowed to use this command!');
 
             const region = interaction.options.get('region')?.value;
             const accounts = await getAccounts(region ? region.toUpperCase() : null);
-            
+
             let message = '';
 
             accounts.forEach((account, i) => {

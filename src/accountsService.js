@@ -107,7 +107,7 @@ function getAccounts(region) {
                     return reject(err.message);
                 }
             }
-            return resolve(region ? updatedAccounts.sort((a,b) => b.level - a.level) : updatedAccounts.sort((a,b) => a.region.localeCompare(b.region) || b.level - a.level));
+            return resolve(region ? updatedAccounts.sort((a,b) => b.level - a.level) : updatedAccounts.sort((a,b) => (a.region).localeCompare(b.region) || b.level - a.level));
         });
     });
 }
