@@ -1,6 +1,6 @@
 const { Client, IntentsBitField } = require('discord.js');
 
-const { mainChannelId, botToken, AdminRoleId } = require('./settings.json')
+const { usableChannels, botToken, AdminRoleId } = require('./settings.json')
 const { getAccounts, addAccount, removeAccount } = require('./src/accountsService.js');
 
 const client = new Client({
@@ -19,7 +19,7 @@ client.on('ready', (bot) => {
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.channelId !== mainChannelId) return interaction.reply('❌ I\'m not allowed to send messages in this channel!');
+    if (!usableChannels.includes(interaction.channelId)) return interaction.reply('❌ I\'m not allowed to send messages in this channel!');
 
     const command = interaction.commandName;
 
@@ -34,7 +34,7 @@ client.on('interactionCreate', async (interaction) => {
 
             accounts.forEach((account, i) => {
                 if (!message.includes(account.region)) {
-                    message += `\n----------= **${account.region}** =----------\n\n`
+                    message += `\n----------= **${account.region}** =----------\n\n✅ ${account.level}\n`
                 } else {
                     message += `✅ ${account.level}\n`
                 }
