@@ -128,3 +128,6 @@ dist
 accounts.json
 settings.json
 accounts.json
+accounts copy.json
+accounts.json
+*.json

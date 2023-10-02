@@ -1,9 +1,8 @@
 const axios = require('axios');
 const { Client, IntentsBitField } = require('discord.js');
 
-const accounts = require('./accounts.json');
 const { mainChannelId, botToken } = require('./settings.json')
-const { getAllAccounts } = require('./src/accountsService.js');
+const { getAllAccounts, addAccount } = require('./src/accountsService.js');
 
 const client = new Client({
     intents: [
@@ -32,19 +31,33 @@ client.on('interactionCreate', (interaction) => {
 
     if(interaction.channelId !== mainChannelId) return interaction.reply('❌ I\'m not allowed to send messages in this channel!');
 
+    const command = interaction.commandName;
+
     interaction.deferReply();
 
-    getAllAccounts()
-        .then(res => {
-            let message = '';
+    if(command === 'check') {
+        getAllAccounts()
+            .then(res => {
+                let message = '';
+    
+                res.forEach((account, i) => {
+                    message+=`---=Account ${i+1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
+                });
+    
+                interaction.editReply(message);
+            })
+            .catch(err => console.log(`ERROR: ${err}`));
 
-            res.forEach((account, i) => {
-                message+=`---=Account ${i+1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
-            });
+    } else if (command === 'add_account') {
+        const account = {
+            name: interaction.options.get('name').value,
+            region: interaction.options.get('region').value
+        } 
+        addAccount(account) 
+            .then(acc => interaction.editReply(`Successfully saved **${acc.name}** in **${(acc.region).toUpperCase()}** in the list!`))
+            .catch(err => interaction.editReply(err.message))
+    }
 
-            interaction.editReply(message);
-        })
-        .catch(err => console.log(`ERROR: ${err}`));
 })
 
 client.login(botToken);
