@@ -26,47 +26,51 @@ client.on('ready', (bot) => {
 //         console.log(msg.channelId);
 // });
 
-client.on('interactionCreate', (interaction) => {
+client.on('interactionCreate', async (interaction) => {
     if(!interaction.isChatInputCommand()) return;
 
     if(interaction.channelId !== mainChannelId) return interaction.reply('❌ I\'m not allowed to send messages in this channel!');
 
     const command = interaction.commandName;
 
-    interaction.deferReply();
+    try {
+        await interaction.deferReply();
+        
+        if(command === 'check') {
+            const response = await getAllAccounts();
+            let message = '';
 
-    if(command === 'check') {
-        getAllAccounts()
-            .then(res => {
-                let message = '';
-    
-                res.forEach((account, i) => {
-                    message+=`---=Account ${i+1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
-                });
-    
-                interaction.editReply(message);
-            })
-            .catch(err => console.log(`ERROR: ${err}`));
+            response.forEach((account, i) => {
+                message+=`---=Account ${i+1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
+            });
 
-    } else if (command === 'add_account') {
-        const account = {
-            name: interaction.options.get('name').value,
-            region: interaction.options.get('region').value
-        } 
-        addAccount(account) 
-            .then(acc => interaction.editReply(`Successfully saved **${acc.name}** in **${(acc.region).toUpperCase()}** in the list!`))
-            .catch(err => interaction.editReply(err.message))
-    } else if (command === 'remove_account') {
-        const account = {
-            name: interaction.options.get('name').value,
-            region: interaction.options.get('region').value
-        } 
-        removeAccount(account) 
-            .then(acc => interaction.editReply(`Successfully removed **${acc.name}** in **${(acc.region).toUpperCase()}** from the list!`))
-            .catch(err => interaction.editReply(err.message))
-    } else {
-        interaction.editReply('❌ Unknown command!');
+            return interaction.editReply(message);
+
+        } else if (command === 'add_account') {
+            const account = {
+                name: interaction.options.get('name').value,
+                region: interaction.options.get('region').value
+            }
+            const addedAccount = await addAccount(account);
+
+            return interaction.editReply(`Successfully saved **${addedAccount.name}** in **${(addedAccount.region).toUpperCase()}** in the list!`);
+
+        } else if (command === 'remove_account') {
+            const account = {
+                name: interaction.options.get('name').value,
+                region: interaction.options.get('region').value
+            }
+            const removedAccount = await removeAccount(account);
+
+            return interaction.editReply(`Successfully removed **${removedAccount.name}** in **${(removedAccount.region).toUpperCase()}** from the list!`);
+
+        } else {
+            interaction.editReply('❌ Unknown command!');
+        }
+    } catch (err) {
+        return interaction.editReply(`❌ ${err.message}`)
     }
+
 
 })
 

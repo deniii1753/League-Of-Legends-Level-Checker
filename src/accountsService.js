@@ -22,7 +22,10 @@ function addAccount(account) {
                 fs.writeFile('accounts.json', JSON.stringify(accounts), 'utf-8', (err) => {
                     if (err) reject({ message: `An error occured when trying to save the account! \n Error: ${err?.message}` });
 
-                    return resolve(account);
+                    return resolve({
+                        name: detailedAccount.data.pageProps.data.name,
+                        region: detailedAccount.data.pageProps.region
+                    });
                 })
             });
         } catch (err) {
@@ -62,7 +65,10 @@ function removeAccount(account) {
                 fs.writeFile('accounts.json', JSON.stringify(accounts.filter(x => x.summonerId !== detailedAccount.data.pageProps.data.summoner_id)), 'utf-8', (err) => {
                     if (err) return reject({message: `An error occured when trying to remove the account! \n Error: ${err.message}`});
 
-                    return resolve(account);
+                    return resolve({
+                        name: detailedAccount.data.pageProps.data.name,
+                        region: detailedAccount.data.pageProps.region
+                    });
                 })
             });
 
@@ -78,6 +84,8 @@ function getAllAccounts() {
             if (err) return reject(err.message);
 
             const accounts = JSON.parse(rawAccounts);
+            if(!accounts.length) return reject({message: 'There are no accounts in the list!'});
+
             const updatedAccounts = [];
 
             for (const account of accounts) {
