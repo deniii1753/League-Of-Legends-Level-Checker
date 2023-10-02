@@ -1,8 +1,7 @@
-const axios = require('axios');
 const { Client, IntentsBitField } = require('discord.js');
 
 const { mainChannelId, botToken, AdminRoleId } = require('./settings.json')
-const { getAllAccounts, addAccount, removeAccount } = require('./src/accountsService.js');
+const { getAccounts, addAccount, removeAccount } = require('./src/accountsService.js');
 
 const client = new Client({
     intents: [
@@ -18,9 +17,9 @@ client.on('ready', (bot) => {
 });
 
 client.on('interactionCreate', async (interaction) => {
-    if(!interaction.isChatInputCommand()) return;
+    if (!interaction.isChatInputCommand()) return;
 
-    if(interaction.channelId !== mainChannelId) return interaction.reply('❌ I\'m not allowed to send messages in this channel!');
+    if (interaction.channelId !== mainChannelId) return interaction.reply('❌ I\'m not allowed to send messages in this channel!');
 
     const command = interaction.commandName;
 
@@ -33,6 +32,17 @@ client.on('interactionCreate', async (interaction) => {
 
             response.forEach((account, i) => {
                 message+=`---=Account ${i+1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
+        } else if (command === 'detailed_check') {
+            const member = interaction.member;
+            if (!(member.roles.cache.has(AdminRoleId))) return interaction.editReply('❌ You are not allowed to use this command!');
+
+            const region = interaction.options.get('region')?.value;
+            const accounts = await getAccounts(region ? region.toUpperCase() : null);
+            
+            let message = '';
+
+            accounts.forEach((account, i) => {
+                message += `---=Account ${i + 1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\n-------------------\n\n`;
             });
 
             return interaction.editReply(message);
@@ -40,11 +50,11 @@ client.on('interactionCreate', async (interaction) => {
         } else if (command === 'add_account') {
             const member = interaction.member;
 
-            if(!(member.roles.cache.has(AdminRoleId))) return interaction.editReply('❌ You are not allowed to use this command!');
+            if (!(member.roles.cache.has(AdminRoleId))) return interaction.editReply('❌ You are not allowed to use this command!');
 
             const account = {
                 name: interaction.options.get('name').value,
-                region: interaction.options.get('region').value
+                region: interaction.options.get('region').value,
             }
             const addedAccount = await addAccount(account);
 
@@ -53,7 +63,7 @@ client.on('interactionCreate', async (interaction) => {
         } else if (command === 'remove_account') {
             const member = interaction.member;
 
-            if(!(member.roles.cache.has(AdminRoleId))) return interaction.editReply('❌ You are not allowed to use this command!');
+            if (!(member.roles.cache.has(AdminRoleId))) return interaction.editReply('❌ You are not allowed to use this command!');
 
             const account = {
                 name: interaction.options.get('name').value,

@@ -54,16 +54,16 @@ function removeAccount(account) {
         try {
             const detailedAccount = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
 
-            if (!detailedAccount.data.pageProps.data.name) return reject({message: 'The account does not exist!'});
+            if (!detailedAccount.data.pageProps.data.name) return reject({ message: 'The account does not exist!' });
 
             fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
                 if (err) return reject(err.message);;
 
                 const accounts = JSON.parse(rawAccounts);
-                if (!accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return reject({message: 'The account is not in the list!'});
+                if (!accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return reject({ message: 'The account is not in the list!' });
 
                 fs.writeFile('accounts.json', JSON.stringify(accounts.filter(x => x.summonerId !== detailedAccount.data.pageProps.data.summoner_id)), 'utf-8', (err) => {
-                    if (err) return reject({message: `An error occured when trying to remove the account! \n Error: ${err.message}`});
+                    if (err) return reject({ message: `An error occured when trying to remove the account! \n Error: ${err.message}` });
 
                     return resolve({
                         name: detailedAccount.data.pageProps.data.name,
@@ -78,17 +78,27 @@ function removeAccount(account) {
     })
 }
 
-function getAllAccounts() {
+function getAccounts(region) {
     return new Promise((resolve, reject) => {
         fs.readFile('accounts.json', 'utf-8', async (err, rawAccounts) => {
             if (err) return reject(err.message);
 
-            const accounts = JSON.parse(rawAccounts);
-            if(!accounts.length) return reject({message: 'There are no accounts in the list!'});
+            const accountsFromList = JSON.parse(rawAccounts);
+            let filteredAccounts = [];
+
+            if (region) {
+                filteredAccounts = accountsFromList.filter(x => x.region === region);
+                if (!filteredAccounts.length) return reject({ message: 'There are no accounts in this region!' });
+
+            } else {
+                filteredAccounts = accountsFromList;
+                if (!filteredAccounts.length) return reject({ message: 'There are no accounts in the list!' });
+            }
+
 
             const updatedAccounts = [];
 
-            for (const account of accounts) {
+            for (const account of filteredAccounts) {
                 try {
                     await axios.post(`https://op.gg/api/v1.0/internal/bypass/summoners/${account.region}/${account.summonerId}/renewal`);
                     const checkedAccount = await getAccountDetails(account);
@@ -97,9 +107,9 @@ function getAllAccounts() {
                     return reject(err.message);
                 }
             }
-            return resolve(updatedAccounts);
+            return resolve(region ? updatedAccounts.sort((a,b) => b.level - a.level) : updatedAccounts.sort((a,b) => a.region.localeCompare(b.region) || b.level - a.level));
         });
     });
 }
 
-module.exports = { getAllAccounts, addAccount, removeAccount }
+module.exports = { getAccounts, addAccount, removeAccount }

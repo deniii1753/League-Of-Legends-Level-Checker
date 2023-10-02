@@ -5,6 +5,29 @@ const commands = [
     {
         name: 'check',
         description: 'Showing the level on every account.'
+        name: 'detailed_check',
+        description: 'Showing detailed information about every account.',
+        options: [
+            {
+                name: 'region',
+                description: 'Select specific region or leave it empty for all regions.',
+                type: 3,
+                choices: [
+                    {
+                        name: 'euw',
+                        value: 'EUW'
+                    },
+                    {
+                        name: 'eune',
+                        value: 'EUNE'
+                    },
+                    {
+                        name: 'na',
+                        value: 'NA'
+                    }
+                ]
+            }
+        ]
     },
     {
         name: 'add_account',
