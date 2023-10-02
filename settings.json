@@ -1,0 +1,7 @@
+{
+    "usableChannels": ["Channel ID1", "Channel ID2"],
+    "botToken": "BOT TOKEN HERE",
+    "GUILD_ID": "Guild ID",
+    "CLIENT_ID": "Client ID",
+    "AdminRoleId": "Admin Role ID"
+}
