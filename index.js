@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { Client, IntentsBitField } = require('discord.js');
 
-const { mainChannelId, botToken } = require('./settings.json')
+const { mainChannelId, botToken, AdminRoleId } = require('./settings.json')
 const { getAllAccounts, addAccount, removeAccount } = require('./src/accountsService.js');
 
 const client = new Client({
@@ -16,15 +16,6 @@ const client = new Client({
 client.on('ready', (bot) => {
     console.log(`✅ ${bot.user.username} is online!`);
 });
-
-// client.on('messageCreate', (msg) => {
-//     if(msg.author.bot) return;
-
-//     if (msg.channelId !== mainChannelId) {
-//         return msg.reply('❌ I\'m not allowed to send messages in this channel!');
-//     }
-//         console.log(msg.channelId);
-// });
 
 client.on('interactionCreate', async (interaction) => {
     if(!interaction.isChatInputCommand()) return;
@@ -47,6 +38,10 @@ client.on('interactionCreate', async (interaction) => {
             return interaction.editReply(message);
 
         } else if (command === 'add_account') {
+            const member = interaction.member;
+
+            if(!(member.roles.cache.has(AdminRoleId))) return interaction.editReply('❌ You are not allowed to use this command!');
+
             const account = {
                 name: interaction.options.get('name').value,
                 region: interaction.options.get('region').value
@@ -56,6 +51,10 @@ client.on('interactionCreate', async (interaction) => {
             return interaction.editReply(`Successfully saved **${addedAccount.name}** in **${(addedAccount.region).toUpperCase()}** in the list!`);
 
         } else if (command === 'remove_account') {
+            const member = interaction.member;
+
+            if(!(member.roles.cache.has(AdminRoleId))) return interaction.editReply('❌ You are not allowed to use this command!');
+
             const account = {
                 name: interaction.options.get('name').value,
                 region: interaction.options.get('region').value
