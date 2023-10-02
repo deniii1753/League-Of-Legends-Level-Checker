@@ -2,7 +2,7 @@ const axios = require('axios');
 const { Client, IntentsBitField } = require('discord.js');
 
 const { mainChannelId, botToken } = require('./settings.json')
-const { getAllAccounts, addAccount } = require('./src/accountsService.js');
+const { getAllAccounts, addAccount, removeAccount } = require('./src/accountsService.js');
 
 const client = new Client({
     intents: [
@@ -56,6 +56,16 @@ client.on('interactionCreate', (interaction) => {
         addAccount(account) 
             .then(acc => interaction.editReply(`Successfully saved **${acc.name}** in **${(acc.region).toUpperCase()}** in the list!`))
             .catch(err => interaction.editReply(err.message))
+    } else if (command === 'remove_account') {
+        const account = {
+            name: interaction.options.get('name').value,
+            region: interaction.options.get('region').value
+        } 
+        removeAccount(account) 
+            .then(acc => interaction.editReply(`Successfully removed **${acc.name}** in **${(acc.region).toUpperCase()}** from the list!`))
+            .catch(err => interaction.editReply(err.message))
+    } else {
+        interaction.editReply('❌ Unknown command!');
     }
 
 })

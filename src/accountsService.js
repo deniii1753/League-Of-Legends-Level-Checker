@@ -6,27 +6,27 @@ function addAccount(account) {
         try {
             const detailedAccount = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
 
-            if (!detailedAccount.data.pageProps.data.name) return reject({message: 'The account does not exist!'});
+            if (!detailedAccount.data.pageProps.data.name) return reject({ message: 'The account does not exist!' });
 
             fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
                 if (err) reject(err.message);
 
                 const accounts = JSON.parse(rawAccounts);
 
-                if (accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return reject({message: 'The account is already in the list!'});
+                if (accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return reject({ message: 'The account is already in the list!' });
                 accounts.push({
                     name: detailedAccount.data.pageProps.data.name,
                     region: (detailedAccount.data.pageProps.region).toUpperCase(),
                     summonerId: detailedAccount.data.pageProps.data.summoner_id
                 })
                 fs.writeFile('accounts.json', JSON.stringify(accounts), 'utf-8', (err) => {
-                    if (err) reject({message: `An error occured when trying to save the account! \n Error: ${err?.message}`});
+                    if (err) reject({ message: `An error occured when trying to save the account! \n Error: ${err?.message}` });
 
                     return resolve(account);
                 })
             });
         } catch (err) {
-            reject(err)
+            return reject(err);
         }
 
     })
@@ -46,28 +46,30 @@ async function getAccountDetails(account) {
     }
 }
 
-async function removeAccount(account) {
-    try {
-        const detailedAccount = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
+function removeAccount(account) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const detailedAccount = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
 
-        if (!detailedAccount.data.pageProps.data.name) throw Error('The account does not exist!');
+            if (!detailedAccount.data.pageProps.data.name) return reject({message: 'The account does not exist!'});
 
-        fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
-            if (err) console.log(err.message);;
+            fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
+                if (err) return reject(err.message);;
 
-            const accounts = JSON.parse(rawAccounts);
-            if (!accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return console.log('The account is not in the list!');
+                const accounts = JSON.parse(rawAccounts);
+                if (!accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return reject({message: 'The account is not in the list!'});
 
-            fs.writeFile('accounts.json', JSON.stringify(accounts.filter(x => x.summonerId !== detailedAccount.data.pageProps.data.summoner_id)), 'utf-8', (err) => {
-                if (err) return console.log(`An error occured when trying to remove the account! \n Error: ${err.message}`);
+                fs.writeFile('accounts.json', JSON.stringify(accounts.filter(x => x.summonerId !== detailedAccount.data.pageProps.data.summoner_id)), 'utf-8', (err) => {
+                    if (err) return reject({message: `An error occured when trying to remove the account! \n Error: ${err.message}`});
 
-                console.log('Successfully removed the account!');
-            })
-        });
+                    return resolve(account);
+                })
+            });
 
-    } catch (err) {
-        console.log(err.message);
-    }
+        } catch (err) {
+            return reject(err);
+        }
+    })
 }
 
 function getAllAccounts() {
@@ -87,9 +89,9 @@ function getAllAccounts() {
                     return reject(err.message);
                 }
             }
-            resolve(updatedAccounts);
+            return resolve(updatedAccounts);
         });
     });
 }
 
-module.exports = { getAllAccounts, addAccount }
+module.exports = { getAllAccounts, addAccount, removeAccount }
