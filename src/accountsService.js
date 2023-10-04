@@ -12,7 +12,7 @@ function addAccount(account) {
                 detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
 
             } catch (error) {
-                throw { message: 'The account does not exist!' };
+                throw { message: 'The account does not exist!'};
             }
             // can be optimized
 
@@ -21,11 +21,11 @@ function addAccount(account) {
 
                 const accounts = JSON.parse(rawAccounts);
 
-                if (accounts.find(x => x.summonerId === detailedAccount.data.puuid)) return reject({ message: 'The account is already in the list!' });
+                if (accounts.find(x => x.puuid === detailedAccount.data.puuid)) return reject({ message: 'The account is already in the list!' });
                 accounts.push({
                     name: detailedAccount.data.name,
                     region: (detailedAccount.data.region).toUpperCase(),
-                    summonerId: detailedAccount.data.puuid
+                    puuid: detailedAccount.data.puuid
                 })
                 fs.writeFile('accounts.json', JSON.stringify(accounts), 'utf-8', (err) => {
                     if (err) return reject({ message: `An error occured when trying to save the account! \n Error: ${err?.message}` });
@@ -50,7 +50,7 @@ async function getAccountDetails(account) {
             detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
 
         } catch (error) {
-            throw { message: 'The account does not exist!' };
+            throw { message: 'The account does not exist!'};
         }
         // can be optimized
 
@@ -99,8 +99,17 @@ async function getAccountDetails(account) {
 function removeAccount(account) {
     return new Promise(async (resolve, reject) => {
         try {
-            // TODO change to xdx.gg api
-            const detailedAccount = await axios.get(`https://www.op.gg/_next/data/2rO_Lrfp1549SOtNKkKVm/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
+            // This part
+            const baseUrl = `https://pp${(account.region).toUpperCase() === 'EUW' ? '1' : '3'}.xdx.gg`;
+            let detailedAccount;
+    
+            try {
+                detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
+    
+            } catch (error) {
+                detailedAccount = undefined;
+            }
+            // can be optimized
 
             fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
                 if (err) return reject(err.message);;
@@ -108,8 +117,8 @@ function removeAccount(account) {
                 const accounts = JSON.parse(rawAccounts);
                 let filteredAccounts = [];
 
-                if (!detailedAccount.data.pageProps.data.name) {
-                    const accountToRemoveIndex = accounts.findIndex(x => x.name.toLowerCase() === account.name.toLowerCase() && x.region.toLowerCase() == account.region.toLowerCase());
+                if (!detailedAccount) {
+                    const accountToRemoveIndex = accounts.findIndex(x => x.name.toLowerCase() === account.name.toLowerCase() && x.region.toLowerCase() === account.region.toLowerCase());
 
                     if (accountToRemoveIndex !== -1) {
                         const firstPart = accounts.slice(0, accountToRemoveIndex);
@@ -117,11 +126,11 @@ function removeAccount(account) {
 
                         filteredAccounts = firstPart.concat(lastPart);
                     } else {
-                        return reject({ message: 'The account does not exist!' });
+                        return reject({ message: 'The account is not in the list!' });
                     }
                 } else {
-                    if (!accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return reject({ message: 'The account is not in the list!' });
-                    filteredAccounts = accounts.filter(x => x.summonerId !== detailedAccount.data.pageProps.data.summoner_id)
+                    if (!accounts.find(x => x.puuid === detailedAccount.data.puuid)) return reject({ message: 'The account is not in the list!' });
+                    filteredAccounts = accounts.filter(x => x.puuid !== detailedAccount.data.puuid)
                 }
 
                 fs.writeFile('accounts.json', JSON.stringify(filteredAccounts), 'utf-8', (err) => {
