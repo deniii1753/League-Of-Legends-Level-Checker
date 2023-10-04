@@ -68,7 +68,7 @@ client.on('interactionCreate', async (interaction) => {
             }
             const addedAccount = await addAccount(account);
 
-            return interaction.editReply(`Successfully saved **${addedAccount.name}** in **${(addedAccount.region).toUpperCase()}** in the list!`);
+            return interaction.editReply(`Successfully saved **${addedAccount.data.name}** in **${(addedAccount.data.region).toUpperCase()}** in the list!`);
 
         } else if (command === 'remove_account') {
             const member = interaction.member;

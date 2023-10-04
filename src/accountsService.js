@@ -4,29 +4,33 @@ const fs = require('fs');
 function addAccount(account) {
     return new Promise(async (resolve, reject) => {
         try {
-            // TODO change to xdx.gg api
-            const detailedAccount = await axios.get(`https://www.op.gg/_next/data/2rO_Lrfp1549SOtNKkKVm/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
+            // This part
+            const baseUrl = `https://pp${(account.region).toUpperCase() === 'EUW' ? '1' : '3'}.xdx.gg`;
+            let detailedAccount;
 
-            if (!detailedAccount.data.pageProps.data.name) return reject({ message: 'The account does not exist!' });
+            try {
+                detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
+
+            } catch (error) {
+                throw { message: 'The account does not exist!' };
+            }
+            // can be optimized
 
             fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
                 if (err) reject(err.message);
 
                 const accounts = JSON.parse(rawAccounts);
 
-                if (accounts.find(x => x.summonerId === detailedAccount.data.pageProps.data.summoner_id)) return reject({ message: 'The account is already in the list!' });
+                if (accounts.find(x => x.summonerId === detailedAccount.data.puuid)) return reject({ message: 'The account is already in the list!' });
                 accounts.push({
-                    name: detailedAccount.data.pageProps.data.name,
-                    region: (detailedAccount.data.pageProps.region).toUpperCase(),
-                    summonerId: detailedAccount.data.pageProps.data.summoner_id
+                    name: detailedAccount.data.name,
+                    region: (detailedAccount.data.region).toUpperCase(),
+                    summonerId: detailedAccount.data.puuid
                 })
                 fs.writeFile('accounts.json', JSON.stringify(accounts), 'utf-8', (err) => {
-                    if (err) reject({ message: `An error occured when trying to save the account! \n Error: ${err?.message}` });
+                    if (err) return reject({ message: `An error occured when trying to save the account! \n Error: ${err?.message}` });
 
-                    return resolve({
-                        name: detailedAccount.data.pageProps.data.name,
-                        region: detailedAccount.data.pageProps.region
-                    });
+                    return resolve(detailedAccount);
                 })
             });
         } catch (err) {
@@ -38,20 +42,21 @@ function addAccount(account) {
 
 async function getAccountDetails(account) {
     try {
+        // This part
         const baseUrl = `https://pp${(account.region).toUpperCase() === 'EUW' ? '1' : '3'}.xdx.gg`;
-        let res;
+        let detailedAccount;
 
         try {
-            res = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
+            detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
 
         } catch (error) {
             throw { message: 'The account does not exist!' };
         }
+        // can be optimized
 
-        if (res.data.matches.length) {
-            const lastGame = res.data.matches[0];
+        if (detailedAccount.data.matches.length) {
+            const lastGame = detailedAccount.data.matches[0];
             const lastGameId = lastGame[0].toString();
-            console.log(`${baseUrl}/match/1/${account.region}/${lastGameId}`);
             const detailedLastGame = await axios.get(`${baseUrl}/match/1/${(account.region).toLowerCase()}/${lastGameId}`);
             let date = detailedLastGame.data.timestamp.toString();
             const currentDate = new Date().getTime().toString();
@@ -73,16 +78,16 @@ async function getAccountDetails(account) {
                 time = `${(timePassed / 1000).toFixed(0)} seconds ago.`;
             }
             return {
-                name: res.data.name,
-                level: res.data.level,
-                region: (res.data.region).toUpperCase(),
+                name: detailedAccount.data.name,
+                level: detailedAccount.data.level,
+                region: (detailedAccount.data.region).toUpperCase(),
                 lastGame: time
             }
         } else {
             return {
-                name: res.data.name,
-                level: res.data.level,
-                region: (res.data.region).toUpperCase(),
+                name: detailedAccount.data.name,
+                level: detailedAccount.data.level,
+                region: (detailedAccount.data.region).toUpperCase(),
                 lastGame: 'N/A'
             }
         }
