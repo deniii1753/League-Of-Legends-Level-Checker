@@ -4,7 +4,8 @@ const fs = require('fs');
 function addAccount(account) {
     return new Promise(async (resolve, reject) => {
         try {
-            const detailedAccount = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
+            // TODO change to xdx.gg api
+            const detailedAccount = await axios.get(`https://www.op.gg/_next/data/2rO_Lrfp1549SOtNKkKVm/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
 
             if (!detailedAccount.data.pageProps.data.name) return reject({ message: 'The account does not exist!' });
 
@@ -37,39 +38,64 @@ function addAccount(account) {
 
 async function getAccountDetails(account) {
     try {
-        const res = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
+        const baseUrl = `https://pp${(account.region).toUpperCase() === 'EUW' ? '1' : '3'}.xdx.gg`;
+        let res;
 
-        const date = new Date(res.data.pageProps.games.meta.first_game_created_at).getTime();
-        const currentDate = new Date().getTime();
+        try {
+            res = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
 
-        const timePassed = currentDate - date;
-
-        let time = '';
-
-        if (timePassed / 8.64e+7 >= 1) {
-            time = `${(timePassed / 8.64e+7).toFixed(0)} days ago.`
-        } else if (timePassed / 3.6e+6 >= 1) {
-            time = `${(timePassed / 3.6e+6).toFixed(0)} hours ago.`
-        } else if (timePassed / 60000 >= 1) {
-            time = `${(timePassed / 60000).toFixed(0)} minutes ago.`;
-        } else {
-            time = `${(timePassed / 1000).toFixed(0)} seconds ago.`;
+        } catch (error) {
+            throw { message: 'The account does not exist!' };
         }
-        return {
-            name: res.data.pageProps.data.name,
-            level: res.data.pageProps.data.level,
-            region: (res.data.pageProps.region).toUpperCase(),
-            lastGame: time
+
+        if (res.data.matches.length) {
+            const lastGame = res.data.matches[0];
+            const lastGameId = lastGame[0].toString();
+            console.log(`${baseUrl}/match/1/${account.region}/${lastGameId}`);
+            const detailedLastGame = await axios.get(`${baseUrl}/match/1/${(account.region).toLowerCase()}/${lastGameId}`);
+            let date = detailedLastGame.data.timestamp.toString();
+            const currentDate = new Date().getTime().toString();
+
+            while (date.length < currentDate.length) {
+                date += 0
+            }
+            const timePassed = Number(currentDate) - Number(date);
+
+            let time = '';
+
+            if (timePassed / 8.64e+7 >= 1) {
+                time = `${(timePassed / 8.64e+7).toFixed(0)} days ago.`
+            } else if (timePassed / 3.6e+6 >= 1) {
+                time = `${(timePassed / 3.6e+6).toFixed(0)} hours ago.`
+            } else if (timePassed / 60000 >= 1) {
+                time = `${(timePassed / 60000).toFixed(0)} minutes ago.`;
+            } else {
+                time = `${(timePassed / 1000).toFixed(0)} seconds ago.`;
+            }
+            return {
+                name: res.data.name,
+                level: res.data.level,
+                region: (res.data.region).toUpperCase(),
+                lastGame: time
+            }
+        } else {
+            return {
+                name: res.data.name,
+                level: res.data.level,
+                region: (res.data.region).toUpperCase(),
+                lastGame: 'N/A'
+            }
         }
     } catch (err) {
-        return err;
+        throw err;
     }
 }
 
 function removeAccount(account) {
     return new Promise(async (resolve, reject) => {
         try {
-            const detailedAccount = await axios.get(`https://www.op.gg/_next/data/rqrYpMAq4Z_yEQbECOXJk/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
+            // TODO change to xdx.gg api
+            const detailedAccount = await axios.get(`https://www.op.gg/_next/data/2rO_Lrfp1549SOtNKkKVm/en_US/summoners/${account.region}/${encodeURIComponent(account.name)}.json`);
 
             fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
                 if (err) return reject(err.message);;
@@ -131,16 +157,15 @@ function getAccounts(region) {
 
             for (const account of filteredAccounts) {
                 try {
-                    await axios.post(`https://op.gg/api/v1.0/internal/bypass/summoners/${account.region}/${account.summonerId}/renewal`);
                     const checkedAccount = await getAccountDetails(account);
-                    if (checkedAccount.hasOwnProperty('name')) {
-                        updatedAccounts.push(checkedAccount)
-                    } else {
-                        console.log(`An error occured while trying to get information about ${account.name} in ${account.region}! Skipping this account...`);
-                    }
+                    updatedAccounts.push(checkedAccount)
 
                 } catch (err) {
-                    return reject(err.message);
+                    if (err.message.includes('does not exist')) {
+                        console.error(`An error occured while trying to get information about ${account.name} in ${account.region}! Skipping this account...`);
+                        continue;
+                    }
+                    return reject(err);
                 }
             }
             return resolve(region ? updatedAccounts.sort((a, b) => b.level - a.level) : updatedAccounts.sort((a, b) => (a.region).localeCompare(b.region) || b.level - a.level));
