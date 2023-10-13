@@ -1,7 +1,7 @@
 # League-Of-Legends-Level-Checker
 
 ## Description 
-This discord bot is based on op.gg, you can add accounts in a list via command in discord server and follow their leveling progress.
+This discord bot is based on [xdx.gg](https://xdx.gg/), you can add accounts in a list via command in discord server and follow their leveling progress.
 
 ## Usage
 
