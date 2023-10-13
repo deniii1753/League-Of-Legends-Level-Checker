@@ -48,14 +48,26 @@ client.on('interactionCreate', async (interaction) => {
 
             const region = interaction.options.get('region')?.value;
             const accounts = await getAccounts(region ? region.toUpperCase() : null);
+            const accountsLength = accounts.length;
 
             let message = '';
+            let messageArrayToDisplay = [];
 
-            accounts.forEach((account, i) => {
-                message += `---=Account ${i + 1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\nLast Game: **${account.lastGame}**\n-------------------\n\n`;
-            });
+            for (let i = 0; i < accountsLength; i++) {
+                const account = accounts[i];
 
-            return interaction.editReply(message);
+                const tempMessage = `---=Account ${i + 1}=---\nRegion: **${account.region}**\nName: **${account.name}**\nLevel: **${account.level}**\nLast Game: **${account.lastGame}**\n-------------------\n\n`;
+                if (message.length + tempMessage.length >= 2000) {
+                    messageArrayToDisplay.push(message);
+                    message = tempMessage;
+                } else {
+                    message += tempMessage;
+                }
+
+                if (i + 1 === accountsLength) messageArrayToDisplay.push(message);
+            }
+
+            return messageArrayToDisplay.forEach(m => interaction.followUp(m));
 
         } else if (command === 'add_account') {
             const member = interaction.member;
