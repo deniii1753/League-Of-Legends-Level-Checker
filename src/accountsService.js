@@ -1,31 +1,31 @@
 const axios = require('axios');
 const fs = require('fs');
+const requester = require('./requester.js');
+
+const baseUrl = `https://api.leaguestats.gg`;
 
 function addAccount(account) {
     return new Promise(async (resolve, reject) => {
         try {
-            // This part
-            const baseUrl = `https://pp${(account.region).toUpperCase() === 'EUW' ? '1' : '3'}.xdx.gg`;
             let detailedAccount;
 
             try {
-                detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
+                detailedAccount = await requester.getAccount(account);
 
             } catch (error) {
-                throw { message: 'The account does not exist!' };
+                throw { message: error.message || 'An error occured while trying to check if the account exists!' };
             }
-            // can be optimized
 
             fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
                 if (err) reject(err.message);
 
                 const accounts = JSON.parse(rawAccounts);
 
-                if (accounts.find(x => x.puuid === detailedAccount.data.puuid)) return reject({ message: 'The account is already in the list!' });
+                if (accounts.find(x => x.accountId === detailedAccount.data.account.accountId)) return reject({ message: 'The account is already in the list!' });
                 accounts.push({
-                    name: detailedAccount.data.name,
-                    region: (detailedAccount.data.region).toUpperCase(),
-                    puuid: detailedAccount.data.puuid
+                    name: detailedAccount.data.account.name,
+                    region: (account.region).toUpperCase(),
+                    accountId: detailedAccount.data.account.accountId
                 })
                 fs.writeFile('accounts.json', JSON.stringify(accounts), 'utf-8', (err) => {
                     if (err) return reject({ message: `An error occured when trying to save the account! \n Error: ${err?.message}` });
@@ -42,15 +42,8 @@ function addAccount(account) {
 
 async function getAccountLevel(account) {
     try {
-        const baseUrl = `https://api.leaguestats.gg`;
-
         try {
-            const detailedAccount = await axios.post(`${baseUrl}/summoner/basic`, {
-                region: `${account.region === 'eune' ? 'eun1' : `${account.region}1`}`,
-                summoner: account.name
-            });
-
-            if (detailedAccount.status === 204) throw new Error('The account does not exist');
+            const detailedAccount = await requester.getAccount(account);
 
             return {
                 region: account.region.toUpperCase(),
@@ -66,17 +59,10 @@ async function getAccountLevel(account) {
 
 async function getDetailedAccount(account) {
     try {
-
-        const baseUrl = `https://api.leaguestats.gg`;
         let detailedAccount;
 
         try {
-            const accountResponse = await axios.post(`${baseUrl}/summoner/basic`, {
-                region: `${account.region === 'eune' ? 'eun1' : `${account.region}1`}`,
-                summoner: account.name
-            });
-
-            if (accountResponse.status === 204) throw new Error('The account does not exist');
+            const accountResponse = await requester.getAccount(account);
 
             detailedAccount = {
                 name: accountResponse.data.account.names[0].name,
@@ -92,7 +78,7 @@ async function getDetailedAccount(account) {
                 region: `${account.region === 'eune' ? 'eun1' : `${account.region}1`}`,
             });
 
-            if(matchesResponse.data.matchesDetails.length) detailedAccount.latestGameTimestamp = Number(matchesResponse.data.matchesDetails[0].date);
+            if (matchesResponse.data.matchesDetails.length) detailedAccount.latestGameTimestamp = Number(matchesResponse.data.matchesDetails[0].date);
 
         } catch (error) {
             throw { message: error.message || 'An error occured while trying to get information about the account!' };
@@ -132,7 +118,6 @@ function removeAccount(account) {
     return new Promise(async (resolve, reject) => {
         try {
             // This part
-            const baseUrl = `https://pp${(account.region).toUpperCase() === 'EUW' ? '1' : '3'}.xdx.gg`;
             let detailedAccount;
 
             try {
