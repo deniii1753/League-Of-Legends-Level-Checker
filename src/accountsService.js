@@ -1,8 +1,5 @@
-const axios = require('axios');
 const fs = require('fs');
 const requester = require('./requester.js');
-
-const baseUrl = `https://api.leaguestats.gg`;
 
 function addAccount(account) {
     return new Promise(async (resolve, reject) => {
