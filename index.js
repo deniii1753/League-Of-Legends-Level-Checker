@@ -47,7 +47,7 @@ client.on('interactionCreate', async (interaction) => {
             if (!(member.roles.cache.has(AdminRoleId))) return interaction.editReply('❌ You are not allowed to use this command!');
 
             const region = interaction.options.get('region')?.value;
-            const accounts = await getAccounts(region ? region.toUpperCase() : null);
+            const accounts = await getAccounts(region ? region.toUpperCase() : null, true);
             const accountsLength = accounts.length;
 
             let message = '';

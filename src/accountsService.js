@@ -12,7 +12,7 @@ function addAccount(account) {
                 detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
 
             } catch (error) {
-                throw { message: 'The account does not exist!'};
+                throw { message: 'The account does not exist!' };
             }
             // can be optimized
 
@@ -40,24 +40,55 @@ function addAccount(account) {
     })
 }
 
-async function getAccountDetails(account) {
+async function getAccountLevel(account) {
     try {
         // This part
-        const baseUrl = `https://pp${(account.region).toUpperCase() === 'EUW' ? '1' : '3'}.xdx.gg`;
+        const baseUrl = `https://api.leaguestats.gg`;
+
+        try {
+            const detailedAccount = await axios.post(`${baseUrl}/summoner/basic`, {
+                region: `${account.region === 'eune' ? 'eun1' : `${account.region}1`}`,
+                summoner: account.name
+            });
+
+            if(detailedAccount.status === 204) throw new Error('The account does not exist');
+
+            return {
+                region: account.region.toUpperCase(),
+                level: detailedAccount.data.account.summonerLevel
+            };
+        } catch (error) {
+            throw {message: error.message || 'An error occured while trying to get information about the account!'};
+        }
+    } catch (err) {
+        throw err;
+    }
+} 
+
+async function getDetailedAccount(account) {
+    try {
+        // This part
+        const baseUrl = `https://api.leaguestats.gg`;
         let detailedAccount;
 
         try {
-            detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
+            const accountResponse = await axios.post(`${baseUrl}/summoner/basic`, {
+                region: `${account.region === 'eune' ? 'eun1' : `${account.region}1`}`,
+                summoner: account.name
+            });
 
+            if(accountResponse.status === 204) throw new Error('The account does not exist');
+
+            const matchesResponse = await axios.post(`${baseUrl}`)
         } catch (error) {
-            throw { message: 'The account does not exist!'};
+            throw {message: error.message || 'An error occured while trying to get information about the account!'};
         }
         // can be optimized
 
         if (detailedAccount.data.matches.length) {
             const lastGame = detailedAccount.data.matches[0];
             const lastGameId = lastGame[0].toString();
-            const detailedLastGame = await axios.get(`${baseUrl}/match/1/${(account.region).toLowerCase()}/${lastGameId}`);
+            const detailedLastGame = await axios.get(`${baseUrl}/match/1/${account.region}/${lastGameId}`);
             let date = detailedLastGame.data.timestamp.toString();
             const currentDate = new Date().getTime().toString();
 
@@ -102,10 +133,10 @@ function removeAccount(account) {
             // This part
             const baseUrl = `https://pp${(account.region).toUpperCase() === 'EUW' ? '1' : '3'}.xdx.gg`;
             let detailedAccount;
-    
+
             try {
                 detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
-    
+
             } catch (error) {
                 detailedAccount = undefined;
             }
@@ -149,7 +180,7 @@ function removeAccount(account) {
     })
 }
 
-function getAccounts(region) {
+function getAccounts(region, detailed = false) {
     return new Promise((resolve, reject) => {
         fs.readFile('accounts.json', 'utf-8', async (err, rawAccounts) => {
             if (err) return reject(err.message);
@@ -171,7 +202,13 @@ function getAccounts(region) {
 
             for (const account of filteredAccounts) {
                 try {
-                    const checkedAccount = await getAccountDetails(account);
+                    account.region = account.region.toLowerCase();
+                    let checkedAccount;
+                    if(detailed) {
+                        checkedAccount = await getDetailedAccount(account);
+                    } else {
+                        checkedAccount = await getAccountLevel(account);
+                    }
                     updatedAccounts.push(checkedAccount)
 
                 } catch (err) {
