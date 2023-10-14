@@ -89,7 +89,7 @@ client.on('interactionCreate', async (interaction) => {
 
             const account = {
                 name: interaction.options.get('name').value,
-                region: interaction.options.get('region').value
+                region: interaction.options.get('region').value.toLowerCase()
             }
             const removedAccount = await removeAccount(account);
 

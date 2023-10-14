@@ -66,17 +66,14 @@ async function getDetailedAccount(account) {
 
             detailedAccount = {
                 name: accountResponse.data.account.names[0].name,
-                region: account.region.toUpperCase(),
+                region: account.region,
                 level: accountResponse.data.account.summonerLevel,
                 latestGameTimestamp: null,
                 accountId: accountResponse.data.account.accountId,
+                puuid: accountResponse.data.account.puuid,
             };
 
-            const matchesResponse = await axios.post(`${baseUrl}/summoner/overview`, {
-                accountId: accountResponse.data.account.accountId,
-                puuid: accountResponse.data.account.puuid,
-                region: `${account.region === 'eune' ? 'eun1' : `${account.region}1`}`,
-            });
+            const matchesResponse = await requester.getMatches(detailedAccount);
 
             if (matchesResponse.data.matchesDetails.length) detailedAccount.latestGameTimestamp = Number(matchesResponse.data.matchesDetails[0].date);
 
@@ -105,7 +102,7 @@ async function getDetailedAccount(account) {
         return {
             name: detailedAccount.name,
             level: detailedAccount.level,
-            region: detailedAccount.region,
+            region: detailedAccount.region.toUpperCase(),
             lastGame: time
         };
 
@@ -117,16 +114,14 @@ async function getDetailedAccount(account) {
 function removeAccount(account) {
     return new Promise(async (resolve, reject) => {
         try {
-            // This part
             let detailedAccount;
 
             try {
-                detailedAccount = await axios.get(`${baseUrl}/summoner/1/${(account.region).toLowerCase()}/${account.name.split(' ').join('')}`);
+                detailedAccount = await requester.getAccount(account);
 
             } catch (error) {
                 detailedAccount = undefined;
             }
-            // can be optimized
 
             fs.readFile('accounts.json', 'utf-8', (err, rawAccounts) => {
                 if (err) return reject(err.message);;
@@ -146,8 +141,8 @@ function removeAccount(account) {
                         return reject({ message: 'The account is not in the list!' });
                     }
                 } else {
-                    if (!accounts.find(x => x.puuid === detailedAccount.data.puuid)) return reject({ message: 'The account is not in the list!' });
-                    filteredAccounts = accounts.filter(x => x.puuid !== detailedAccount.data.puuid)
+                    if (!accounts.find(x => x.accountId === detailedAccount.data.account.accountId)) return reject({ message: 'The account is not in the list!' });
+                    filteredAccounts = accounts.filter(x => x.accountId !== detailedAccount.data.account.accountId)
                 }
 
                 fs.writeFile('accounts.json', JSON.stringify(filteredAccounts), 'utf-8', (err) => {
