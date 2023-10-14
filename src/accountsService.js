@@ -42,7 +42,6 @@ function addAccount(account) {
 
 async function getAccountLevel(account) {
     try {
-        // This part
         const baseUrl = `https://api.leaguestats.gg`;
 
         try {
@@ -51,23 +50,23 @@ async function getAccountLevel(account) {
                 summoner: account.name
             });
 
-            if(detailedAccount.status === 204) throw new Error('The account does not exist');
+            if (detailedAccount.status === 204) throw new Error('The account does not exist');
 
             return {
                 region: account.region.toUpperCase(),
                 level: detailedAccount.data.account.summonerLevel
             };
         } catch (error) {
-            throw {message: error.message || 'An error occured while trying to get information about the account!'};
+            throw { message: error.message || 'An error occured while trying to get information about the account!' };
         }
     } catch (err) {
         throw err;
     }
-} 
+}
 
 async function getDetailedAccount(account) {
     try {
-        // This part
+
         const baseUrl = `https://api.leaguestats.gg`;
         let detailedAccount;
 
@@ -77,27 +76,34 @@ async function getDetailedAccount(account) {
                 summoner: account.name
             });
 
-            if(accountResponse.status === 204) throw new Error('The account does not exist');
+            if (accountResponse.status === 204) throw new Error('The account does not exist');
 
-            const matchesResponse = await axios.post(`${baseUrl}`)
+            detailedAccount = {
+                name: accountResponse.data.account.names[0].name,
+                region: account.region.toUpperCase(),
+                level: accountResponse.data.account.summonerLevel,
+                latestGameTimestamp: null,
+                accountId: accountResponse.data.account.accountId,
+            };
+
+            const matchesResponse = await axios.post(`${baseUrl}/summoner/overview`, {
+                accountId: accountResponse.data.account.accountId,
+                puuid: accountResponse.data.account.puuid,
+                region: `${account.region === 'eune' ? 'eun1' : `${account.region}1`}`,
+            });
+
+            if(matchesResponse.data.matchesDetails.length) detailedAccount.latestGameTimestamp = Number(matchesResponse.data.matchesDetails[0].date);
+
         } catch (error) {
-            throw {message: error.message || 'An error occured while trying to get information about the account!'};
+            throw { message: error.message || 'An error occured while trying to get information about the account!' };
         }
-        // can be optimized
 
-        if (detailedAccount.data.matches.length) {
-            const lastGame = detailedAccount.data.matches[0];
-            const lastGameId = lastGame[0].toString();
-            const detailedLastGame = await axios.get(`${baseUrl}/match/1/${account.region}/${lastGameId}`);
-            let date = detailedLastGame.data.timestamp.toString();
-            const currentDate = new Date().getTime().toString();
+        let time = 'N/A';
 
-            while (date.length < currentDate.length) {
-                date += 0
-            }
-            const timePassed = Number(currentDate) - Number(date);
-
-            let time = '';
+        if (detailedAccount.latestGameTimestamp) {
+            let date = detailedAccount.latestGameTimestamp;
+            const currentDate = new Date().getTime();
+            const timePassed = currentDate - date;
 
             if (timePassed / 8.64e+7 >= 1) {
                 time = `${(timePassed / 8.64e+7).toFixed(0)} days ago.`
@@ -108,20 +114,15 @@ async function getDetailedAccount(account) {
             } else {
                 time = `${(timePassed / 1000).toFixed(0)} seconds ago.`;
             }
-            return {
-                name: detailedAccount.data.name,
-                level: detailedAccount.data.level,
-                region: (detailedAccount.data.region).toUpperCase(),
-                lastGame: time
-            }
-        } else {
-            return {
-                name: detailedAccount.data.name,
-                level: detailedAccount.data.level,
-                region: (detailedAccount.data.region).toUpperCase(),
-                lastGame: 'N/A'
-            }
         }
+
+        return {
+            name: detailedAccount.name,
+            level: detailedAccount.level,
+            region: detailedAccount.region,
+            lastGame: time
+        };
+
     } catch (err) {
         throw err;
     }
@@ -204,7 +205,7 @@ function getAccounts(region, detailed = false) {
                 try {
                     account.region = account.region.toLowerCase();
                     let checkedAccount;
-                    if(detailed) {
+                    if (detailed) {
                         checkedAccount = await getDetailedAccount(account);
                     } else {
                         checkedAccount = await getAccountLevel(account);
